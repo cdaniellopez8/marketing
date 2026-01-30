@@ -881,57 +881,60 @@ def pagina_diagnostico():
             st.markdown("---")
         
         submitted = st.form_submit_button("📊 Ver Resultados", type="primary", use_container_width=True)
+    
+    # IMPORTANTE: El botón de volver debe estar FUERA del formulario
+    if submitted:
+        # Evaluar respuestas
+        correctas_dict = {}
+        total_correctas = 0
         
-        if submitted:
-            # Evaluar respuestas
-            correctas_dict = {}
-            total_correctas = 0
-            
+        for i, item in enumerate(preguntas_diagnostico):
+            es_correcta = respuestas[i] == item['correcta']
+            correctas_dict[i] = es_correcta
+            if es_correcta:
+                total_correctas += 1
+        
+        st.session_state.respuestas_diagnostico = correctas_dict
+        st.session_state.diagnostico_completado = True
+        
+        # Mostrar resultados
+        st.markdown("### 📊 Resultados del Diagnóstico")
+        
+        porcentaje = (total_correctas / len(preguntas_diagnostico)) * 100
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Respuestas Correctas", f"{total_correctas}/{len(preguntas_diagnostico)}")
+        with col2:
+            st.metric("Porcentaje", f"{porcentaje:.0f}%")
+        with col3:
+            if porcentaje >= 80:
+                nivel = "⭐ Avanzado"
+            elif porcentaje >= 60:
+                nivel = "🎯 Intermedio"
+            else:
+                nivel = "🌱 Principiante"
+            st.metric("Nivel Estimado", nivel)
+        
+        # Detalle por pregunta
+        with st.expander("Ver detalle de respuestas"):
             for i, item in enumerate(preguntas_diagnostico):
-                es_correcta = respuestas[i] == item['correcta']
-                correctas_dict[i] = es_correcta
-                if es_correcta:
-                    total_correctas += 1
-            
-            st.session_state.respuestas_diagnostico = correctas_dict
-            st.session_state.diagnostico_completado = True
-            
-            # Mostrar resultados
-            st.markdown("### 📊 Resultados del Diagnóstico")
-            
-            porcentaje = (total_correctas / len(preguntas_diagnostico)) * 100
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Respuestas Correctas", f"{total_correctas}/{len(preguntas_diagnostico)}")
-            with col2:
-                st.metric("Porcentaje", f"{porcentaje:.0f}%")
-            with col3:
-                if porcentaje >= 80:
-                    nivel = "⭐ Avanzado"
-                elif porcentaje >= 60:
-                    nivel = "🎯 Intermedio"
+                if correctas_dict[i]:
+                    st.success(f"✅ Pregunta {i+1}: Correcta")
                 else:
-                    nivel = "🌱 Principiante"
-                st.metric("Nivel Estimado", nivel)
-            
-            # Detalle por pregunta
-            with st.expander("Ver detalle de respuestas"):
-                for i, item in enumerate(preguntas_diagnostico):
-                    if correctas_dict[i]:
-                        st.success(f"✅ Pregunta {i+1}: Correcta")
-                    else:
-                        st.error(f"❌ Pregunta {i+1}: Incorrecta")
-                        st.info(f"**Respuesta correcta:** {item['opciones'][item['correcta']]}")
-            
-            # Otorgar puntos
-            actualizar_puntos(total_correctas * 10)
-            
-            st.success(f"🎉 ¡Diagnóstico completado! Has ganado {total_correctas * 10} puntos.")
-            
-            if st.button("🏠 Volver al Inicio"):
-                st.session_state.pagina_actual = "inicio"
-                st.rerun()
+                    st.error(f"❌ Pregunta {i+1}: Incorrecta")
+                    st.info(f"**Respuesta correcta:** {item['opciones'][item['correcta']]}")
+        
+        # Otorgar puntos
+        actualizar_puntos(total_correctas * 10)
+        
+        st.success(f"🎉 ¡Diagnóstico completado! Has ganado {total_correctas * 10} puntos.")
+    
+    # Botón de volver FUERA del formulario
+    st.markdown("---")
+    if st.button("🏠 Volver al Inicio", key="volver_inicio_diagnostico"):
+        st.session_state.pagina_actual = "inicio"
+        st.rerun()
 
 # --- PÁGINA 3: MAPA CONCEPTUAL ---
 
@@ -2386,6 +2389,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
