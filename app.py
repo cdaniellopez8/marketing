@@ -645,73 +645,198 @@ def mostrar_progreso_global():
     st.progress(progreso_nivel)
     st.caption(f"Próximo nivel: {siguiente}")
 
-def crear_grafico_cvp(etapa_seleccionada=None):
-    """Crea gráfico interactivo del Ciclo de Vida del Producto"""
-    x = np.linspace(0, 10, 100)
+def crear_grafico_cvp_especifico(producto_info, etapa_resaltar=None):
+    """Crea gráfico del CVP específico para cada producto"""
     
-    # Curva de ventas
-    ventas = np.concatenate([
-        np.linspace(0, 30, 25),      # Introducción
-        np.linspace(30, 80, 25),     # Crecimiento
-        np.linspace(80, 85, 25) + np.random.normal(0, 2, 25),  # Madurez
-        np.linspace(85, 20, 25)      # Declive
-    ])
+    # Configuraciones específicas por etapa actual del producto
+    configuraciones = {
+        "Introducción": {
+            "ventas_max": 30,
+            "utilidades_min": -20,
+            "utilidades_max": 5,
+            "punto_ventas": 0.15,  # 15% del tiempo total
+            "punto_utilidades": 0.20
+        },
+        "Crecimiento": {
+            "ventas_max": 65,
+            "utilidades_min": -10,
+            "utilidades_max": 55,
+            "punto_ventas": 0.40,  # 40% del tiempo total
+            "punto_utilidades": 0.45
+        },
+        "Madurez": {
+            "ventas_max": 85,
+            "utilidades_min": -5,
+            "utilidades_max": 70,
+            "punto_ventas": 0.70,  # 70% del tiempo total
+            "punto_utilidades": 0.65
+        },
+        "Declive": {
+            "ventas_max": 30,
+            "utilidades_min": 0,
+            "utilidades_max": 25,
+            "punto_ventas": 0.95,  # 95% del tiempo total
+            "punto_utilidades": 0.90
+        }
+    }
     
-    # Curva de utilidades (retraso respecto a ventas)
-    utilidades = np.concatenate([
-        np.linspace(-20, 0, 25),     # Introducción (pérdidas)
-        np.linspace(0, 60, 25),      # Crecimiento
-        np.linspace(60, 65, 25),     # Madurez
-        np.linspace(65, 10, 25)      # Declive
-    ])
+    etapa_actual = producto_info['etapa_actual']
+    config = configuraciones[etapa_actual]
     
+    # Crear curvas basadas en la etapa actual
+    x = np.linspace(0, 10, 200)
+    
+    if etapa_actual == "Introducción":
+        # Producto en lanzamiento inicial
+        ventas = np.concatenate([
+            np.linspace(0, 25, 150),      # Crecimiento lento
+            np.linspace(25, 30, 50)       # Inicio de aceleración
+        ])
+        utilidades = np.concatenate([
+            np.linspace(-20, -10, 100),   # Pérdidas iniciales
+            np.linspace(-10, 0, 100)      # Recuperación gradual
+        ])
+    
+    elif etapa_actual == "Crecimiento":
+        # Producto en expansión acelerada
+        ventas = np.concatenate([
+            np.linspace(0, 20, 50),       # Introducción previa
+            np.linspace(20, 65, 100),     # CRECIMIENTO ACELERADO
+            np.linspace(65, 70, 50)       # Inicio de madurez
+        ])
+        utilidades = np.concatenate([
+            np.linspace(-10, 0, 50),      # Salida de pérdidas
+            np.linspace(0, 55, 100),      # UTILIDADES CRECIENTES
+            np.linspace(55, 60, 50)       # Estabilización
+        ])
+    
+    elif etapa_actual == "Madurez":
+        # Producto consolidado
+        ventas = np.concatenate([
+            np.linspace(0, 30, 50),       # Introducción
+            np.linspace(30, 75, 50),      # Crecimiento
+            np.linspace(75, 85, 70) + np.random.normal(0, 1.5, 70),  # MADUREZ con fluctuaciones
+            np.linspace(85, 82, 30)       # Inicio de declive
+        ])
+        utilidades = np.concatenate([
+            np.linspace(-5, 10, 50),      # Inicios
+            np.linspace(10, 60, 50),      # Crecimiento
+            np.linspace(60, 70, 70) + np.random.normal(0, 1, 70),    # MADUREZ estable
+            np.linspace(70, 65, 30)       # Inicio de caída
+        ])
+    
+    else:  # Declive
+        # Producto en descenso
+        ventas = np.concatenate([
+            np.linspace(0, 30, 40),       # Introducción
+            np.linspace(30, 70, 40),      # Crecimiento
+            np.linspace(70, 80, 40),      # Madurez
+            np.linspace(80, 30, 80)       # DECLIVE pronunciado
+        ])
+        utilidades = np.concatenate([
+            np.linspace(-5, 10, 40),      # Inicios
+            np.linspace(10, 55, 40),      # Crecimiento
+            np.linspace(55, 60, 40),      # Madurez
+            np.linspace(60, 15, 80)       # DECLIVE de utilidades
+        ])
+    
+    # Crear figura
     fig = go.Figure()
     
-    # Ventas
+    # Curva de Ventas
     fig.add_trace(go.Scatter(
         x=x, y=ventas,
         mode='lines',
         name='Ventas',
-        line=dict(color='#3498db', width=3),
+        line=dict(color='#3498db', width=4),
         fill='tozeroy',
-        fillcolor='rgba(52, 152, 219, 0.2)'
+        fillcolor='rgba(52, 152, 219, 0.2)',
+        hovertemplate='<b>Ventas</b><br>Tiempo: %{x:.1f}<br>Nivel: %{y:.1f}<extra></extra>'
     ))
     
-    # Utilidades
+    # Curva de Utilidades
     fig.add_trace(go.Scatter(
         x=x, y=utilidades,
         mode='lines',
         name='Utilidades',
-        line=dict(color='#e74c3c', width=3, dash='dash')
+        line=dict(color='#e74c3c', width=4, dash='dash'),
+        hovertemplate='<b>Utilidades</b><br>Tiempo: %{x:.1f}<br>Nivel: %{y:.1f}<extra></extra>'
     ))
     
-    # Zonas de etapas
-    etapas_info = [
+    # Etapas del CVP (zonas de fondo)
+    etapas_zonas = [
         (0, 2.5, 'Introducción', '#e8f4f8'),
         (2.5, 5, 'Crecimiento', '#d4edda'),
         (5, 7.5, 'Madurez', '#fff3cd'),
         (7.5, 10, 'Declive', '#f8d7da')
     ]
     
-    for inicio, fin, nombre, color in etapas_info:
-        resaltar = etapa_seleccionada == nombre if etapa_seleccionada else False
+    for inicio, fin, nombre, color in etapas_zonas:
+        # Resaltar la etapa actual del producto
+        resaltar = (nombre == etapa_actual) or (etapa_resaltar == nombre)
+        
         fig.add_vrect(
             x0=inicio, x1=fin,
             fillcolor=color,
-            opacity=0.5 if resaltar else 0.2,
-            line_width=2 if resaltar else 0,
-            annotation_text=nombre if resaltar else "",
-            annotation_position="top left"
+            opacity=0.6 if resaltar else 0.2,
+            line_width=3 if resaltar else 0,
+            line_color='#2c3e50' if resaltar else None,
+            annotation_text=f"<b>{nombre}</b>" if resaltar else nombre,
+            annotation_position="top",
+            annotation_font_size=14 if resaltar else 11,
+            annotation_font_color='#2c3e50' if resaltar else '#7f8c8d'
         )
     
+    # Marcar el punto actual del producto
+    punto_x = config['punto_ventas'] * 10
+    punto_y_ventas = np.interp(punto_x, x, ventas)
+    
+    fig.add_trace(go.Scatter(
+        x=[punto_x],
+        y=[punto_y_ventas],
+        mode='markers+text',
+        marker=dict(size=20, color='#e74c3c', symbol='star', line=dict(width=2, color='white')),
+        text=["📍 Estás aquí"],
+        textposition="top center",
+        textfont=dict(size=14, color='#e74c3c', family='Arial Black'),
+        name='Posición Actual',
+        hovertemplate=f'<b>Posición Actual</b><br>{etapa_actual}<extra></extra>'
+    ))
+    
+    # Layout del gráfico
     fig.update_layout(
-        title="Ciclo de Vida del Producto (CVP)",
-        xaxis_title="Tiempo",
-        yaxis_title="Ventas / Utilidades",
+        title=dict(
+            text=f"<b>Ciclo de Vida: {producto_info.get('nombre', 'Producto')}</b><br><sub>Etapa Actual: {etapa_actual}</sub>",
+            font=dict(size=20, family='Arial Black'),
+            x=0.5,
+            xanchor='center'
+        ),
+        xaxis=dict(
+            title='<b>Tiempo</b>',
+            showgrid=True,
+            gridcolor='lightgray',
+            showticklabels=False  # Ocultar números del eje temporal
+        ),
+        yaxis=dict(
+            title='<b>Nivel de Ventas / Utilidades</b>',
+            showgrid=True,
+            gridcolor='lightgray',
+            zeroline=True,
+            zerolinewidth=2,
+            zerolinecolor='gray'
+        ),
         hovermode='x unified',
-        height=400,
+        height=500,
         showlegend=True,
-        legend=dict(x=0.02, y=0.98)
+        legend=dict(
+            x=0.02, 
+            y=0.98,
+            bgcolor='rgba(255, 255, 255, 0.8)',
+            bordercolor='gray',
+            borderwidth=1
+        ),
+        plot_bgcolor='white',
+        paper_bgcolor='#f8f9fa'
     )
     
     return fig
@@ -1082,57 +1207,117 @@ def pagina_simulador_cvp():
     
     st.markdown("---")
     
-    # Selector de producto
+    # Selector de producto con información estructurada
     productos_ejemplo = {
         "iPhone (Apple)": {
+            "nombre": "iPhone (Apple)",
             "etapa_actual": "Madurez",
-            "descripcion": "Producto consolidado con alta penetración de mercado, competencia intensa y enfoque en innovación incremental.",
+            "descripcion": "Producto consolidado con alta penetración de mercado. Aunque sigue siendo líder, el mercado de smartphones está saturado y la competencia es feroz. Apple se enfoca en innovación incremental y retención de clientes.",
+            "caracteristicas_etapa": [
+                "📊 Ventas altas pero crecimiento desacelerado",
+                "💰 Máxima rentabilidad alcanzada",
+                "⚔️ Competencia intensa (Samsung, Xiaomi, etc.)",
+                "👥 Mercado saturado, mayoría ya adoptó el producto"
+            ],
             "estrategias": [
-                "Modificación del producto (nuevas versiones anuales)",
-                "Diferenciación por ecosistema (Apple Watch, AirPods)",
-                "Segmentación (iPhone SE, Pro, Pro Max)",
-                "Programas de fidelización (Apple One)"
-            ]
+                "🔄 Modificación del producto: nuevas versiones anuales (iPhone 15, 16...)",
+                "🎯 Diferenciación por ecosistema: integración con Apple Watch, AirPods, Mac",
+                "📱 Segmentación de mercado: iPhone SE (económico), iPhone Pro (premium)",
+                "💎 Programas de fidelización: Apple One, Trade-in, servicios (Music, TV+)"
+            ],
+            "metricas": {
+                "Participación de mercado": "~18% global",
+                "Ciclo de reemplazo": "3-4 años promedio",
+                "Margen de utilidad": "Alto (30-40%)"
+            }
         },
         "Netflix": {
+            "nombre": "Netflix",
             "etapa_actual": "Madurez",
-            "descripcion": "Líder en streaming pero con saturación en mercados clave y competencia creciente (Disney+, Prime Video).",
+            "descripcion": "Pionero del streaming que ahora enfrenta saturación en mercados clave (USA, Europa) y competencia agresiva. Las suscripciones han alcanzado su pico y ahora busca nuevas fuentes de ingresos.",
+            "caracteristicas_etapa": [
+                "📊 Crecimiento de suscriptores estancado en mercados maduros",
+                "💰 Presión sobre márgenes por inversión en contenido",
+                "⚔️ Competencia feroz: Disney+, HBO Max, Prime Video, Apple TV+",
+                "🌍 Necesidad de expansión internacional"
+            ],
             "estrategias": [
-                "Contenido original exclusivo",
-                "Expansión a nuevos mercados geográficos",
-                "Planes con publicidad (modificación del modelo)",
-                "Control de compartición de cuentas"
-            ]
+                "🎬 Contenido original exclusivo: series y películas de alto presupuesto",
+                "🌏 Expansión a mercados emergentes: India, África, Latinoamérica",
+                "💵 Planes con publicidad: modelo más económico para ampliar base",
+                "🔒 Control de compartición de cuentas: monetizar usuarios no pagantes"
+            ],
+            "metricas": {
+                "Suscriptores globales": "~250 millones",
+                "Inversión en contenido": "$17 mil millones/año",
+                "Churn rate": "~2-3% mensual"
+            }
         },
-        "Automóvil Eléctrico": {
+        "Vehículo Eléctrico": {
+            "nombre": "Vehículo Eléctrico",
             "etapa_actual": "Crecimiento",
-            "descripcion": "Tecnología en expansión con adopción creciente, múltiples competidores ingresando al mercado.",
+            "descripcion": "Tecnología en rápida expansión impulsada por conciencia ambiental, regulaciones y mejora de infraestructura. Las ventas crecen exponencialmente y múltiples fabricantes están ingresando al mercado.",
+            "caracteristicas_etapa": [
+                "📈 Ventas en rápido crecimiento (>50% anual)",
+                "💰 Utilidades comenzando a ser positivas",
+                "🏭 Nuevos competidores entrando constantemente",
+                "👥 Adopción acelerada por early adopters y mainstream"
+            ],
             "estrategias": [
-                "Ampliar red de carga (infraestructura)",
-                "Mejorar autonomía de batería",
-                "Reducir precios mediante economías de escala",
-                "Diversificar modelos (SUV, sedán, deportivos)"
-            ]
+                "⚡ Ampliar infraestructura de carga: estaciones rápidas y hogar",
+                "🔋 Mejorar tecnología de batería: mayor autonomía (>500 km)",
+                "💵 Reducir precios mediante economías de escala y subsidios",
+                "🚗 Diversificar modelos: SUV, sedán, deportivos, pick-ups"
+            ],
+            "metricas": {
+                "Crecimiento anual": "55-60%",
+                "Cuota de mercado automotriz": "~14% (2023)",
+                "Precio promedio": "Descendiendo (~$50k USD)"
+            }
         },
         "Máquina de Escribir": {
+            "nombre": "Máquina de Escribir",
             "etapa_actual": "Declive",
-            "descripcion": "Tecnología obsoleta reemplazada por computadoras, ventas residuales en nichos específicos.",
+            "descripcion": "Tecnología obsoleta completamente reemplazada por computadoras y procesadores de texto. Solo persiste en nichos muy específicos (coleccionistas, artistas, entusiastas vintage).",
+            "caracteristicas_etapa": [
+                "📉 Ventas en caída continua (>90% vs pico histórico)",
+                "💰 Utilidades mínimas o negativas",
+                "🏭 Mayoría de fabricantes salieron del mercado",
+                "👥 Solo quedan consumidores de nicho muy específico"
+            ],
             "estrategias": [
-                "Enfoque en coleccionistas y mercado vintage",
-                "Reducción de costos operativos",
-                "Retiro progresivo del mercado masivo",
-                "Pivote a productos relacionados (teclados mecánicos)"
-            ]
+                "🎨 Enfoque en coleccionistas y mercado vintage/artístico",
+                "💸 Reducción drástica de costos operativos",
+                "🚪 Retiro progresivo del mercado masivo",
+                "🔄 Pivote a productos relacionados: teclados mecánicos, nostalgia"
+            ],
+            "metricas": {
+                "Ventas anuales globales": "<100,000 unidades",
+                "Fabricantes activos": "~3-5 en el mundo",
+                "Precio promedio": "$100-500 (usadas/vintage)"
+            }
         },
-        "Realidad Virtual (VR)": {
+        "Realidad Virtual (VR Consumo)": {
+            "nombre": "Realidad Virtual Consumo",
             "etapa_actual": "Introducción",
-            "descripcion": "Tecnología emergente con adopción inicial limitada, altos costos de desarrollo y educación del mercado.",
+            "descripcion": "Tecnología emergente con gran potencial pero adopción aún limitada. Enfrenta barreras de precio, contenido disponible y experiencia de usuario. Los early adopters están probando, pero el mercado masivo aún duda.",
+            "caracteristicas_etapa": [
+                "📊 Ventas bajas, crecimiento inicial lento",
+                "💸 Altos costos de I+D y producción",
+                "🏭 Pocos competidores consolidados (Meta, Sony, HTC)",
+                "❓ Consumidores desconocen beneficios o tienen dudas"
+            ],
             "estrategias": [
-                "Comunicación educativa sobre beneficios",
-                "Alianzas con desarrolladores de contenido",
-                "Demostraciones y pruebas en tiendas",
-                "Reducción gradual de precios"
-            ]
+                "📢 Comunicación educativa: demostrar beneficios y casos de uso",
+                "🤝 Alianzas con desarrolladores: crear contenido atractivo (juegos, experiencias)",
+                "🎮 Demostraciones en tiendas: probar antes de comprar",
+                "💵 Reducción gradual de precios: de $500-1000 hacia $300-400"
+            ],
+            "metricas": {
+                "Ventas anuales": "~10-15 millones de headsets",
+                "Penetración de mercado": "<2% de hogares",
+                "Precio promedio": "$400-600"
+            }
         }
     }
     
@@ -1141,39 +1326,81 @@ def pagina_simulador_cvp():
     with col1:
         producto_seleccionado = st.selectbox(
             "🎯 Selecciona un producto para analizar:",
-            list(productos_ejemplo.keys())
+            list(productos_ejemplo.keys()),
+            help="Cada producto está en una etapa diferente del CVP"
         )
-    
-    with col2:
-        etapa_resaltar = st.selectbox(
-            "🔍 Resaltar etapa del CVP:",
-            ["Ninguna", "Introducción", "Crecimiento", "Madurez", "Declive"]
-        )
-    
-    # Mostrar gráfico CVP
-    st.markdown("### 📊 Gráfico del Ciclo de Vida")
-    fig_cvp = crear_grafico_cvp(etapa_resaltar if etapa_resaltar != "Ninguna" else None)
-    st.plotly_chart(fig_cvp, use_container_width=True)
-    
-    # Información del producto
-    st.markdown("---")
-    st.markdown(f"### 📱 Análisis: **{producto_seleccionado}**")
     
     info_producto = productos_ejemplo[producto_seleccionado]
     
-    col_a, col_b = st.columns([1, 2])
+    with col2:
+        etapa_resaltar = st.selectbox(
+            "🔍 Resaltar otra etapa del CVP (comparación):",
+            ["Ninguna", "Introducción", "Crecimiento", "Madurez", "Declive"],
+            help="Resalta una etapa diferente para comparar"
+        )
     
-    with col_a:
-        st.markdown(f"**Etapa Actual:**")
-        st.markdown(f"<h2 style='color:#e74c3c;'>{info_producto['etapa_actual']}</h2>", unsafe_allow_html=True)
+    # Mostrar gráfico CVP ESPECÍFICO
+    st.markdown("### 📊 Gráfico del Ciclo de Vida")
+    fig_cvp = crear_grafico_cvp_especifico(
+        info_producto, 
+        etapa_resaltar if etapa_resaltar != "Ninguna" else None
+    )
+    st.plotly_chart(fig_cvp, use_container_width=True)
     
-    with col_b:
-        st.markdown(f"**Descripción:**")
+    # Información detallada del producto
+    st.markdown("---")
+    st.markdown(f"### 📱 Análisis Detallado: **{producto_seleccionado}**")
+    
+    col_etapa, col_desc = st.columns([1, 2])
+    
+    with col_etapa:
+        st.markdown("**🎯 Etapa Actual**")
+        color_etapa = {
+            "Introducción": "#3498db",
+            "Crecimiento": "#2ecc71",
+            "Madurez": "#f39c12",
+            "Declive": "#e74c3c"
+        }
+        st.markdown(f"<h2 style='color:{color_etapa[info_producto['etapa_actual']]};'>{info_producto['etapa_actual']}</h2>", unsafe_allow_html=True)
+    
+    with col_desc:
+        st.markdown("**📋 Descripción de la Situación**")
         st.info(info_producto['descripcion'])
     
-    st.markdown("**🎯 Estrategias Recomendadas:**")
+    # Características de la etapa
+    st.markdown("---")
+    st.markdown("**📊 Características de esta Etapa**")
+    for caracteristica in info_producto['caracteristicas_etapa']:
+        st.markdown(f"- {caracteristica}")
+    
+    # Estrategias recomendadas
+    st.markdown("---")
+    st.markdown("**🎯 Estrategias Aplicadas/Recomendadas**")
     for estrategia in info_producto['estrategias']:
         st.markdown(f"- {estrategia}")
+    
+    # Métricas clave
+    st.markdown("---")
+    st.markdown("**📈 Métricas Clave del Producto**")
+    cols_metricas = st.columns(len(info_producto['metricas']))
+    for i, (metrica, valor) in enumerate(info_producto['metricas'].items()):
+        with cols_metricas[i]:
+            st.metric(metrica, valor)
+    
+    # Comparación de etapas
+    st.markdown("---")
+    with st.expander("📚 Ver Comparación de Todas las Etapas del CVP"):
+        tabla_comparacion = pd.DataFrame({
+            "Etapa": ["Introducción", "Crecimiento", "Madurez", "Declive"],
+            "Ventas": ["Bajas", "Crecimiento rápido", "Pico/Estables", "En descenso"],
+            "Utilidades": ["Negativas", "Crecientes", "Máximas", "Bajas/Decrecientes"],
+            "Competencia": ["Poca/Nula", "Creciente", "Intensa", "Decreciente"],
+            "Clientes": ["Innovadores", "Adoptadores tempranos", "Mayoría", "Rezagados"],
+            "Objetivo": ["Conocimiento", "Participación", "Defensa", "Eficiencia/Salida"],
+            "Estrategia Precio": ["Alto/Penetración", "Competitivo", "Defensivo", "Reducción"],
+            "Estrategia Comunicación": ["Informativa", "Persuasiva", "Recordatoria", "Mínima"]
+        })
+        st.dataframe(tabla_comparacion, use_container_width=True, hide_index=True)
     
     # Quiz situacional
     st.markdown("---")
@@ -1182,27 +1409,100 @@ def pagina_simulador_cvp():
     quiz_cvp_key = f"quiz_cvp_{producto_seleccionado}"
     
     if quiz_cvp_key not in st.session_state:
-        st.session_state[quiz_cvp_key] = False
+        st.session_state[quiz_cvp_key] = {"respondido": False, "correcto": None}
     
-    if not st.session_state[quiz_cvp_key]:
-        st.markdown(f"**¿En qué etapa del CVP se encuentra {producto_seleccionado}?**")
+    if not st.session_state[quiz_cvp_key]["respondido"]:
+        st.markdown(f"**¿En qué etapa del CVP se encuentra actualmente {producto_seleccionado}?**")
         
         respuesta_cvp = st.radio(
-            "Tu respuesta:",
+            "Selecciona tu respuesta:",
             ["Introducción", "Crecimiento", "Madurez", "Declive"],
             key=f"radio_cvp_{producto_seleccionado}"
         )
         
-        if st.button("Verificar", key=f"btn_cvp_{producto_seleccionado}"):
-            if respuesta_cvp == info_producto['etapa_actual']:
-                st.success(f"✅ ¡Correcto! {producto_seleccionado} está en etapa de {info_producto['etapa_actual']}.")
+        if st.button("✅ Verificar Respuesta", key=f"btn_cvp_{producto_seleccionado}", type="primary"):
+            es_correcta = respuesta_cvp == info_producto['etapa_actual']
+            st.session_state[quiz_cvp_key]["respondido"] = True
+            st.session_state[quiz_cvp_key]["correcto"] = es_correcta
+            
+            if es_correcta:
                 actualizar_puntos(15)
-                st.session_state[quiz_cvp_key] = True
                 st.session_state.progreso['quizzes_completados'].add(quiz_cvp_key)
-            else:
-                st.error(f"❌ Incorrecto. La etapa correcta es: **{info_producto['etapa_actual']}**")
-                st.info("💡 Revisa las características de cada etapa en el gráfico.")
+            
+            st.rerun()
+    
+    else:
+        # Mostrar resultado
+        if st.session_state[quiz_cvp_key]["correcto"]:
+            st.success(f"✅ ¡Correcto! {producto_seleccionado} está en etapa de **{info_producto['etapa_actual']}**.")
+            st.balloons()
+            
+            # Explicación adicional
+            explicaciones = {
+                "Introducción": "Reconociste que este producto está en fase inicial con ventas bajas, altos costos y enfoque en generar conocimiento.",
+                "Crecimiento": "Identificaste correctamente que este producto está en expansión acelerada con ventas crecientes y nuevos competidores entrando.",
+                "Madurez": "Acertaste que este producto está consolidado pero con crecimiento desacelerado y competencia intensa.",
+                "Declive": "Reconociste que este producto está en descenso con ventas cayendo y siendo reemplazado por tecnologías superiores."
+            }
+            st.info(f"💡 {explicaciones[info_producto['etapa_actual']]}")
+        
+        else:
+            st.error(f"❌ Incorrecto. La etapa correcta es: **{info_producto['etapa_actual']}**")
+            st.info("💡 Observa el gráfico: la estrella roja 📍 muestra dónde está actualmente el producto. Analiza las características y métricas para identificar la etapa.")
+        
+        if st.button("🔄 Reintentar con este producto", key=f"reintentar_cvp_{producto_seleccionado}"):
+            st.session_state[quiz_cvp_key] = {"respondido": False, "correcto": None}
+            st.rerun()
+    
+    # Sección educativa adicional
+    st.markdown("---")
+    st.markdown("### 💡 ¿Cómo Identificar la Etapa del CVP?")
+    
+    with st.expander("Ver Guía de Identificación"):
+        st.markdown("""
+        **Pregúntate estas 5 cosas para identificar la etapa:**
+        
+        1. **📊 ¿Cómo están las ventas?**
+           - Bajas/Iniciales → Introducción
+           - Creciendo rápidamente → Crecimiento
+           - Altas pero estancadas → Madurez
+           - Cayendo → Declive
+        
+        2. **💰 ¿Y las utilidades?**
+           - Negativas/Pérdidas → Introducción
+           - Creciendo fuertemente → Crecimiento
+           - En su máximo nivel → Madurez
+           - Bajando → Declive
+        
+        3. **⚔️ ¿Cuántos competidores hay?**
+           - Pocos o ninguno → Introducción
+           - Cada vez más entrando → Crecimiento
+           - Muchísimos compitiendo → Madurez
+           - Varios saliendo del mercado → Declive
+        
+        4. **👥 ¿Quién está comprando?**
+           - Solo innovadores/early adopters → Introducción
+           - Adoptadores tempranos → Crecimiento
+           - La mayoría del mercado → Madurez
+           - Solo rezagados o nicho → Declive
+        
+        5. **🎯 ¿Cuál es el objetivo principal?**
+           - Crear conocimiento → Introducción
+           - Ganar participación → Crecimiento
+           - Defender posición → Madurez
+           - Reducir costos/salir → Declive
+        """)
+    
+    # Recomendación de siguiente paso
+    st.markdown("---")
+    st.info("""
+    💡 **Siguiente paso sugerido:**  
+    Explora diferentes productos para ver cómo varía el CVP según la industria y contexto.
+    Luego practica con el **Quiz Adaptativo** para consolidar tu conocimiento.
+    """)
 
+
+            
 # --- PÁGINA 6: CONSTRUCTOR DE MARCA ---
 
 def pagina_constructor_marca():
@@ -2389,6 +2689,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
